@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>10 Seconds Challenge</title>
+<title>10 Seconds Challenge - Inter-Primary Schools STEAM Challenge 2026</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -20,11 +20,32 @@
   .card {
     background: #fff;
     width: 100%;
-    max-width: 560px;
+    max-width: 600px;
     border-radius: 16px;
-    padding: 28px 24px;
+    padding: 0 24px 28px;
     box-shadow: 0 10px 30px rgba(0,0,0,.35);
     text-align: center;
+    overflow: hidden;
+  }
+  .banner {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: #fff;
+    margin: 0 -24px 22px;
+    padding: 18px 16px 16px;
+    border-bottom: 5px solid #f5a623;
+  }
+  .banner .school {
+    font-size: 1.15rem;
+    font-weight: bold;
+    letter-spacing: .5px;
+    line-height: 1.3;
+  }
+  .banner .event {
+    font-size: 1.35rem;
+    font-weight: bold;
+    color: #ffd27a;
+    margin-top: 6px;
+    line-height: 1.3;
   }
   h1 { margin: 0 0 6px; color: #1e3c72; }
   .sub { color: #666; margin-bottom: 20px; }
@@ -92,6 +113,11 @@
   .result-box .label { font-size: .95rem; color: #555; }
   .result-box .value { font-size: 1.5rem; font-weight: bold; color: #1e3c72; }
   .team-name { font-size: 1.2rem; color: #555; margin-bottom: 6px; }
+  @media (max-width: 480px) {
+    .banner .school { font-size: 1rem; }
+    .banner .event { font-size: 1.1rem; }
+    button { padding: 14px 24px; font-size: 1.2rem; }
+  }
 </style>
 </head>
 <body>
@@ -100,9 +126,12 @@
 
   <!-- Challenge page -->
   <div id="challengePage">
-   <h1>Yuen Long Merchants Association Secondary School</h1>
-   <h1>Inter-Primary Schools STEAM Challenge 2026</h1>
-   <h1>⏱️ 10 Seconds Challenge</h1>
+    <div class="banner">
+      <div class="school">Yuen Long Merchants Association Secondary School</div>
+      <div class="event">Inter-Primary Schools STEAM Challenge 2026</div>
+    </div>
+
+    <h1>⏱️ 10 Seconds Challenge</h1>
     <div class="sub">Press Start, then press Stop when you think exactly 10 seconds have passed. The timer is hidden!</div>
 
     <input type="text" id="teamName" placeholder="Team name (optional)" maxlength="30">
@@ -120,6 +149,11 @@
 
   <!-- Result page -->
   <div id="resultPage" class="hidden">
+    <div class="banner">
+      <div class="school">Yuen Long Merchants Association Secondary School</div>
+      <div class="event">Inter-Primary Schools STEAM Challenge 2026</div>
+    </div>
+
     <h1>📊 Results</h1>
     <div class="team-name" id="resultTeam"></div>
 
@@ -179,6 +213,7 @@
     startBtn.disabled = false;
     stopBtn.disabled = true;
     teamInput.disabled = false;
+    teamInput.value = "";
     trialInfo.textContent = "Trial 1 of " + TOTAL_TRIALS;
     statusEl.textContent = "Press START when ready.";
     updateDots();
