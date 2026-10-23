@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10 Seconds Challenge</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Segoe UI", Arial, "Microsoft JhengHei", sans-serif;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: #222;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .card {
+    background: #fff;
+    width: 100%;
+    max-width: 560px;
+    border-radius: 16px;
+    padding: 28px 24px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    text-align: center;
+  }
+  h1 { margin: 0 0 6px; color: #1e3c72; }
+  .sub { color: #666; margin-bottom: 20px; }
+  .hidden { display: none; }
+  input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 1.1rem;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  .trial-info { font-size: 1.4rem; font-weight: bold; margin: 10px 0; }
+  .status {
+    font-size: 1.2rem;
+    min-height: 2.4em;
+    margin: 12px 0 20px;
+    color: #444;
+  }
+  .mystery {
+    font-size: 3rem;
+    margin: 6px 0;
+    letter-spacing: 6px;
+  }
+  button {
+    font-size: 1.4rem;
+    padding: 16px 32px;
+    margin: 6px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    color: #fff;
+    font-weight: bold;
+    transition: transform .1s, opacity .2s;
+  }
+  button:active:not(:disabled) { transform: scale(.96); }
+  button:disabled { opacity: .35; cursor: not-allowed; }
+  #startBtn { background: #2e9e4f; }
+  #stopBtn { background: #d63a3a; }
+  #restartBtn { background: #1e3c72; margin-top: 18px; }
+  .dots span {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #ddd;
+    margin: 0 5px;
+  }
+  .dots span.done { background: #2e9e4f; }
+  .dots span.current { background: #f5a623; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+  }
+  th, td { padding: 10px; border-bottom: 1px solid #e3e3e3; }
+  th { background: #f0f4fb; color: #1e3c72; }
+  .result-box {
+    background: #f0f4fb;
+    border-radius: 10px;
+    padding: 12px;
+    margin: 12px 0;
+    text-align: left;
+  }
+  .result-box .label { font-size: .95rem; color: #555; }
+  .result-box .value { font-size: 1.5rem; font-weight: bold; color: #1e3c72; }
+  .team-name { font-size: 1.2rem; color: #555; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- Challenge page -->
+  <div id="challengePage">
+    <h1>⏱️ 10 Seconds Challenge</h1>
+    <div class="sub">Press Start, then press Stop when you think exactly 10 seconds have passed. The timer is hidden!</div>
+
+    <input type="text" id="teamName" placeholder="Team name (optional)" maxlength="30">
+
+    <div class="dots" id="dots">
+      <span></span><span></span><span></span>
+    </div>
+    <div class="trial-info" id="trialInfo">Trial 1 of 3</div>
+    <div class="mystery">? ? ?</div>
+    <div class="status" id="status">Press START when ready.</div>
+
+    <button id="startBtn">START</button>
+    <button id="stopBtn" disabled>STOP</button>
+  </div>
+
+  <!-- Result page -->
+  <div id="resultPage" class="hidden">
+    <h1>📊 Results</h1>
+    <div class="team-name" id="resultTeam"></div>
+
+    <table>
+      <thead>
+        <tr><th>Trial</th><th>Actual time (s)</th><th>Difference from 10 s (s)</th></tr>
+      </thead>
+      <tbody id="resultBody"></tbody>
+    </table>
+
+    <div class="result-box">
+      <div class="label">1. Actual time of the 3 trials</div>
+      <div class="value" id="actualTimes"></div>
+    </div>
+    <div class="result-box">
+      <div class="label">2. Difference between the closest trial and the 10 s target</div>
+      <div class="value" id="closestDiff"></div>
+    </div>
+    <div class="result-box">
+      <div class="label">3. Standard deviation of the 3 trials</div>
+      <div class="value" id="stdDev"></div>
+    </div>
+
+    <button id="restartBtn">🔄 Start Over</button>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var TARGET = 10;
+  var TOTAL_TRIALS = 3;
+
+  var trials = [];
+  var startTime = null;
+
+  var challengePage = document.getElementById("challengePage");
+  var resultPage = document.getElementById("resultPage");
+  var startBtn = document.getElementById("startBtn");
+  var stopBtn = document.getElementById("stopBtn");
+  var statusEl = document.getElementById("status");
+  var trialInfo = document.getElementById("trialInfo");
+  var teamInput = document.getElementById("teamName");
+  var dots = document.querySelectorAll("#dots span");
+
+  function updateDots() {
+    for (var i = 0; i < dots.length; i++) {
+      dots[i].className = "";
+      if (i < trials.length) dots[i].className = "done";
+      else if (i === trials.length) dots[i].className = "current";
+    }
+  }
+
+  function resetChallenge() {
+    trials = [];
+    startTime = null;
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    teamInput.disabled = false;
+    trialInfo.textContent = "Trial 1 of " + TOTAL_TRIALS;
+    statusEl.textContent = "Press START when ready.";
+    updateDots();
+    resultPage.className = "hidden";
+    challengePage.className = "";
+  }
+
+  startBtn.addEventListener("click", function () {
+    startTime = performance.now();
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    teamInput.disabled = true;
+    statusEl.textContent = "Timing... press STOP at 10 seconds!";
+  });
+
+  stopBtn.addEventListener("click", function () {
+    if (startTime === null) return;
+    var elapsed = (performance.now() - startTime) / 1000;
+    startTime = null;
+    trials.push(elapsed);
+    stopBtn.disabled = true;
+    updateDots();
+
+    if (trials.length >= TOTAL_TRIALS) {
+      statusEl.textContent = "All trials done! Loading results...";
+      setTimeout(showResults, 1000);
+    } else {
+      trialInfo.textContent = "Trial " + (trials.length + 1) + " of " + TOTAL_TRIALS;
+      statusEl.textContent = "Trial " + trials.length + " recorded. Press START for the next trial.";
+      startBtn.disabled = false;
+    }
+  });
+
+  function showResults() {
+    var diffs = trials.map(function (t) { return Math.abs(t - TARGET); });
+    var minDiff = Math.min.apply(null, diffs);
+    var closestIndex = diffs.indexOf(minDiff);
+
+    var mean = trials.reduce(function (a, b) { return a + b; }, 0) / trials.length;
+    var sumSq = trials.reduce(function (a, b) { return a + Math.pow(b - mean, 2); }, 0);
+    // Population SD (divide by n). For sample SD use: trials.length - 1
+    var sd = Math.sqrt(sumSq / trials.length);
+
+    var name = teamInput.value.trim();
+    document.getElementById("resultTeam").textContent = name ? "Team: " + name : "";
+
+    var body = document.getElementById("resultBody");
+    body.innerHTML = "";
+    trials.forEach(function (t, i) {
+      var signed = t - TARGET;
+      var tr = document.createElement("tr");
+      var mark = (i === closestIndex) ? " ⭐" : "";
+      tr.innerHTML =
+        "<td>" + (i + 1) + mark + "</td>" +
+        "<td>" + t.toFixed(3) + "</td>" +
+        "<td>" + (signed >= 0 ? "+" : "") + signed.toFixed(3) + "</td>";
+      body.appendChild(tr);
+    });
+
+    document.getElementById("actualTimes").textContent =
+      trials.map(function (t) { return t.toFixed(3) + " s"; }).join(" , ");
+
+    var closestSigned = trials[closestIndex] - TARGET;
+    document.getElementById("closestDiff").textContent =
+      minDiff.toFixed(3) + " s (Trial " + (closestIndex + 1) + ", " +
+      (closestSigned >= 0 ? "over" : "under") + ")";
+
+    document.getElementById("stdDev").textContent = sd.toFixed(3) + " s";
+
+    challengePage.className = "hidden";
+    resultPage.className = "";
+  }
+
+  document.getElementById("restartBtn").addEventListener("click", resetChallenge);
+
+  resetChallenge();
+})();
+</script>
+
+</body>
+</html>
